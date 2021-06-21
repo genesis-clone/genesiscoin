@@ -1,16 +1,20 @@
 package main
 
-import "fmt"
+import (
+	"crypto/sha256"
+	"fmt"
+)
 
-type age struct {
-	age int
-}
-
-func (a age) myAge() {
-	fmt.Printf("My Korean age is %d years old", a.age)
+type block struct {
+	data string
+	hash string
+	prevHash string
 }
 
 func main() {
-	myAge := age{33}
-	myAge.myAge()
+	genesisBlock := block{"genesis block", "", ""}
+	hash := sha256.Sum256([]byte(genesisBlock.data + genesisBlock.hash))
+	hexHash := fmt.Sprintf("%x", hash)
+	genesisBlock.hash = hexHash
+	fmt.Println(genesisBlock)
 }
