@@ -19,7 +19,7 @@ var templates *template.Template
 
 type homeData struct {
 	PageTitle string
-	Blocks []*blockchain.Block
+	Blocks    []*blockchain.Block
 }
 
 func home(rw http.ResponseWriter, r *http.Request) {
