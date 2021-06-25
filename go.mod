@@ -1,3 +1,3 @@
-module github.com/genesis717-clone/genesiscoin
+module github.com/genesis-clone/genesiscoin
 
 go 1.16
