@@ -2,20 +2,21 @@ package explorer
 
 import (
 	"fmt"
-	"log"
-
 	"html/template"
+	"log"
 	"net/http"
 
 	"github.com/genesis-clone/genesiscoin/blockchain"
 )
 
 const (
-	port = ":4000"
 	templatesDir = "explorer/templates/"
 )
 
-var templates *template.Template
+var (
+	templates *template.Template
+	port      string
+)
 
 type homeData struct {
 	PageTitle string
@@ -39,11 +40,13 @@ func add(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Start() {
+func Start(aPort int) {
+	handler := http.NewServeMux()
+	port = fmt.Sprintf(":%d", aPort)
 	templates = template.Must(template.ParseGlob(templatesDir + "pages/*.gohtml"))
 	templates = template.Must(templates.ParseGlob(templatesDir + "partials/*.gohtml"))
-	http.HandleFunc("/", home)
-	http.HandleFunc("/add", add)
+	handler.HandleFunc("/", home)
+	handler.HandleFunc("/add", add)
 	fmt.Printf("Listening on http://localhost%s\n", port)
-	log.Fatal(http.ListenAndServe(port, nil))
+	log.Fatal(http.ListenAndServe(port, handler))
 }
