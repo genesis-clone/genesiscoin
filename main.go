@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/genesis-clone/genesiscoin/blockchain"
+	"github.com/genesis-clone/genesiscoin/utils"
 )
 
 const port = ":4000"
@@ -42,10 +43,20 @@ func documentation(rw http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(rw).Encode(data)
 }
 
+type AddBlockBody struct {
+	Message string
+}
+
 func blocks(rw http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
+		rw.Header().Add("Content-Type", "application/json")
 		json.NewEncoder(rw).Encode(blockchain.GetBlockchain().GetAllBlocks())
+	case "POST":
+		var addBlockBody AddBlockBody
+		utils.HandleErr(json.NewDecoder(r.Body).Decode(&addBlockBody))
+		blockchain.GetBlockchain().AddBlock(addBlockBody.Message)
+		rw.WriteHeader(http.StatusCreated)
 	}
 }
 
