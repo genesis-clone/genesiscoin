@@ -3,10 +3,13 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/genesis-clone/genesiscoin/blockchain"
 	"github.com/genesis-clone/genesiscoin/utils"
+	"github.com/gorilla/mux"
 )
 
 var port string
@@ -25,6 +28,10 @@ type urlDescription struct {
 	Payload     string `json:"payload,omitempty"`
 }
 
+type addBlockBody struct {
+	Message string
+}
+
 func documentation(rw http.ResponseWriter, r *http.Request) {
 	data := []urlDescription{
 		{
@@ -34,17 +41,23 @@ func documentation(rw http.ResponseWriter, r *http.Request) {
 		},
 		{
 			URL:         url("/blocks"),
+			Method:      "GET",
+			Description: "See All Blocks",
+		},
+		{
+			URL:         url("/blocks"),
 			Method:      "POST",
 			Description: "Add A Block",
 			Payload:     "data:string",
 		},
+		{
+			URL:         url("/blocks/{id}"),
+			Method:      "GET",
+			Description: "See A Block",
+		},
 	}
 	rw.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(rw).Encode(data)
-}
-
-type addBlockBody struct {
-	Message string
 }
 
 func blocks(rw http.ResponseWriter, r *http.Request) {
@@ -57,14 +70,25 @@ func blocks(rw http.ResponseWriter, r *http.Request) {
 		utils.HandleErr(json.NewDecoder(r.Body).Decode(&addBlockBody))
 		blockchain.GetBlockchain().AddBlock(addBlockBody.Message)
 		rw.WriteHeader(http.StatusCreated)
+	default:
+		rw.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
+func block(rw http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["height"])
+	utils.HandleErr(err)
+	block := blockchain.GetBlockchain().GetBlock(id)
+	json.NewEncoder(rw).Encode(block)
+}
+
 func Start(aPort int) {
-	handler := http.NewServeMux()
+	router := mux.NewRouter()
 	port = fmt.Sprintf(":%d", aPort)
-	handler.HandleFunc("/", documentation)
-	handler.HandleFunc("/blocks", blocks)
+	router.HandleFunc("/", documentation).Methods("GET")
+	router.HandleFunc("/blocks", blocks).Methods("GET", "POST")
+	router.HandleFunc("/blocks/{height:[0-9]+}", block).Methods("GET")
 	fmt.Printf("Listening on http://localhost%s\n", port)
-	http.ListenAndServe(port, handler)
+	log.Fatal(http.ListenAndServe(port, router))
 }
